@@ -1,6 +1,6 @@
+import './loadEnv.js';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import './initDb.js';
@@ -12,8 +12,7 @@ import plansRoutes from './routes/plans.js';
 import aboutRoutes from './routes/about.js';
 import settingsRoutes from './routes/settings.js';
 import { uploadsDir } from './middleware/upload.js';
-
-dotenv.config();
+import { isTelegramConfigured } from './services/telegram.js';
 
 if (!process.env.JWT_SECRET) {
   console.warn('Warning: JWT_SECRET not set. Using default (unsafe for production).');
@@ -67,4 +66,7 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`Maria Daily Vision API: http://localhost:${PORT}`);
+  if (isTelegramConfigured()) {
+    console.log('Telegram: уведомления о новых новостях включены');
+  }
 });

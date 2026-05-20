@@ -4,6 +4,7 @@ import path from 'path';
 import db from '../db.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
+import { notifyNewNews } from '../services/telegram.js';
 
 const router = Router();
 const PER_PAGE = 10;
@@ -61,6 +62,7 @@ router.post('/', authenticate, requireAdmin, upload.single('image'), (req, res) 
     )
     .run(title.trim(), content.trim(), image_path, pubDate);
   const item = db.prepare('SELECT * FROM news WHERE id = ?').get(result.lastInsertRowid);
+  void notifyNewNews(item).catch((err) => console.error('[telegram]', err.message));
   res.status(201).json({ item });
 });
 
