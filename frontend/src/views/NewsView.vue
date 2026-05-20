@@ -13,9 +13,17 @@
     <p v-if="loading" class="empty-state">Загрузка…</p>
     <p v-else-if="error" class="error-msg">{{ error }}</p>
     <p v-else-if="!items.length" class="empty-state">Новостей пока нет</p>
-    <template v-else>
-      <ArticleCard v-for="item in items" :key="item.id" :item="item" />
-    </template>
+    <div v-else class="news-mosaic">
+      <ArticleCard
+        v-for="(item, index) in items"
+        :key="item.id"
+        :item="item"
+        :variant="cardVariant(index)"
+        detail-route="news-detail"
+        :show-admin="auth.isAdmin"
+        @deleted="onDeleted"
+      />
+    </div>
 
     <PaginationBar :page="page" :total-pages="totalPages" @change="goPage" />
   </section>
@@ -42,6 +50,13 @@ const date = ref('');
 const loading = ref(false);
 const error = ref('');
 
+function cardVariant(index) {
+  if (index === 0) return 'hero';
+  if (index < 3) return 'duo';
+  if (index < 7) return 'quad';
+  return 'default';
+}
+
 async function load() {
   loading.value = true;
   error.value = '';
@@ -60,6 +75,10 @@ async function load() {
   } finally {
     loading.value = false;
   }
+}
+
+function onDeleted() {
+  load();
 }
 
 function syncFromRoute() {
@@ -113,5 +132,48 @@ onMounted(() => {
 .page-title {
   font-family: var(--font-headline);
   font-size: 1.75rem;
+}
+
+@media (min-width: 1024px) {
+  .news-mosaic {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .news-mosaic :deep(.article-card-outer:nth-child(1)) {
+    grid-column: 1 / -1;
+  }
+
+  .news-mosaic :deep(.article-card-outer:nth-child(2)),
+  .news-mosaic :deep(.article-card-outer:nth-child(3)) {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1023px) {
+  .news-mosaic :deep(.article-card.is-hero .card-title),
+  .news-mosaic :deep(.article-card.is-duo .card-title) {
+    font-size: 1.35rem;
+  }
+
+  .news-mosaic :deep(.article-card.is-quad .card-title) {
+    font-size: 1.35rem;
+    padding: 1rem 1rem 0.25rem;
+  }
+
+  .news-mosaic :deep(.article-card.is-quad .card-date) {
+    padding: 0 1rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .news-mosaic :deep(.article-card.is-quad .card-image-wrap) {
+    aspect-ratio: 16 / 10;
+  }
+
+  .news-mosaic :deep(.article-card.is-quad .card-excerpt) {
+    font-size: 0.95rem;
+  }
 }
 </style>

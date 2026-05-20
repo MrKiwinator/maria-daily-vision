@@ -5,26 +5,58 @@
         <h1 class="masthead-title">Maria Daily Vision</h1>
       </RouterLink>
       <p v-if="tagline" class="tagline">{{ tagline }}</p>
-      <nav class="main-nav">
-        <RouterLink to="/about">О Марии</RouterLink>
-        <RouterLink to="/news">Новости</RouterLink>
-        <RouterLink to="/plans">Планы</RouterLink>
-        <RouterLink v-if="auth.isAdmin" to="/users">Пользователи</RouterLink>
-        <button type="button" class="nav-logout" @click="onLogout">Выход</button>
-      </nav>
+
+      <button
+        type="button"
+        class="burger"
+        :aria-expanded="menuOpen"
+        aria-controls="main-nav-panel"
+        @click="menuOpen = !menuOpen"
+      >
+        <span class="burger-lines" aria-hidden="true" />
+        <span class="burger-label">{{ menuOpen ? 'Закрыть' : 'Меню' }}</span>
+      </button>
+
+      <div
+        id="main-nav-panel"
+        class="nav-panel"
+        :class="{ 'nav-panel--open': menuOpen }"
+      >
+        <nav class="main-nav" aria-label="Основное меню">
+          <RouterLink to="/about" @click="closeMenu">О Марии</RouterLink>
+          <RouterLink to="/news" @click="closeMenu">Новости</RouterLink>
+          <RouterLink v-if="auth.isAdmin" to="/users" @click="closeMenu">
+            Пользователи
+          </RouterLink>
+          <button type="button" class="nav-logout" @click="onLogout">Выход</button>
+        </nav>
+      </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { ref, onMounted, watch } from 'vue';
+import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth.js';
 import { api } from '../api/client.js';
 
 const auth = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 const tagline = ref('');
+const menuOpen = ref(false);
+
+function closeMenu() {
+  menuOpen.value = false;
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeMenu();
+  }
+);
 
 onMounted(async () => {
   try {
@@ -36,6 +68,7 @@ onMounted(async () => {
 });
 
 function onLogout() {
+  closeMenu();
   auth.logout();
   router.push({ name: 'login' });
 }
@@ -51,6 +84,7 @@ function onLogout() {
 
 .header-inner {
   text-align: center;
+  position: relative;
 }
 
 .masthead {
@@ -82,13 +116,46 @@ function onLogout() {
   font-style: italic;
 }
 
+.burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.5rem auto 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-card);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.burger-label {
+  font-size: 0.9rem;
+}
+
+.burger-lines {
+  display: block;
+  width: 1.25rem;
+  height: 2px;
+  background: var(--text);
+  box-shadow:
+    0 -6px 0 var(--text),
+    0 6px 0 var(--text);
+  position: relative;
+}
+
+.nav-panel {
+  border-top: 1px solid var(--border);
+}
+
 .main-nav {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.5rem 1.25rem;
   padding: 0.75rem 0;
-  border-top: 1px solid var(--border);
 }
 
 .main-nav a {
@@ -117,5 +184,40 @@ function onLogout() {
 
 .nav-logout:hover {
   color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .burger {
+    display: inline-flex;
+  }
+
+  .nav-panel {
+    display: none;
+    padding: 0 0 0.5rem;
+  }
+
+  .nav-panel--open {
+    display: block;
+  }
+
+  .main-nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.5rem 0 0;
+  }
+
+  .main-nav a,
+  .main-nav .nav-logout {
+    display: block;
+    padding: 0.65rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .main-nav a.router-link-active {
+    border-bottom-color: var(--border);
+    background: rgba(122, 32, 56, 0.06);
+  }
 }
 </style>

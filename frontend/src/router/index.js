@@ -21,13 +21,20 @@ const routes = [
         component: () => import('../views/ArticleEditorView.vue'),
         meta: { admin: true, type: 'news' },
       },
-      { path: 'plans', name: 'plans', component: () => import('../views/PlansView.vue') },
       {
-        path: 'plans/new',
-        name: 'plans-new',
+        path: 'news/:id/edit',
+        name: 'news-edit',
         component: () => import('../views/ArticleEditorView.vue'),
-        meta: { admin: true, type: 'plans' },
+        meta: { admin: true, type: 'news' },
       },
+      {
+        path: 'news/:id',
+        name: 'news-detail',
+        component: () => import('../views/NewsDetailView.vue'),
+      },
+      /* Раздел «Планы» временно скрыт — вернём маршруты позже */
+      { path: 'plans', redirect: { name: 'news' } },
+      { path: 'plans/new', redirect: { name: 'news' } },
       { path: 'about', name: 'about', component: () => import('../views/AboutView.vue') },
       {
         path: 'users',
