@@ -241,6 +241,7 @@ pm2 restart mdv-api
 | GET/POST/PUT/DELETE | `/api/news` | GET — все; POST/PUT/DELETE — админ |
 | GET/POST | `/api/news/:id/comments` | Авторизованные пользователи |
 | DELETE | `/api/news/:id/comments/:commentId` | Автор комментария или админ |
+| GET | `/api/news/comments/recent?limit=8` | Последние комментарии (для боковой панели) |
 | GET/POST/PUT/DELETE | `/api/plans` | Аналогично |
 | GET/PUT | `/api/about` | GET — все; PUT — админ |
 | GET/PUT | `/api/settings/tagline` | GET — все; PUT — админ |

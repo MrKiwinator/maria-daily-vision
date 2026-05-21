@@ -50,6 +50,22 @@ router.get('/', authenticate, (req, res) => {
   res.json({ items, page, totalPages, total, perPage: PER_PAGE });
 });
 
+router.get('/comments/recent', authenticate, (req, res) => {
+  const limit = Math.min(20, Math.max(1, Number(req.query.limit) || 8));
+  const comments = db
+    .prepare(
+      `SELECT c.id, c.news_id, c.body, c.created_at, u.username,
+        n.title AS news_title
+       FROM news_comments c
+       JOIN users u ON u.id = c.user_id
+       JOIN news n ON n.id = c.news_id
+       ORDER BY c.created_at DESC
+       LIMIT ?`
+    )
+    .all(limit);
+  res.json({ comments });
+});
+
 router.get('/:id/comments', authenticate, (req, res) => {
   const news = db.prepare('SELECT id FROM news WHERE id = ?').get(req.params.id);
   if (!news) return res.status(404).json({ error: 'Новость не найдена' });

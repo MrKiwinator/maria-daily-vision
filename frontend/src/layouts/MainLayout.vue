@@ -5,8 +5,9 @@
       <main class="page-main">
         <RouterView />
       </main>
-      <aside class="updates-aside" aria-label="Последние изменения">
+      <aside class="sidebar-aside" aria-label="Боковая панель">
         <LastUpdatesWidget />
+        <RecentNewsCommentsWidget class="sidebar-comments" />
       </aside>
     </div>
   </div>
@@ -15,6 +16,7 @@
 <script setup>
 import AppHeader from '../components/AppHeader.vue';
 import LastUpdatesWidget from '../components/LastUpdatesWidget.vue';
+import RecentNewsCommentsWidget from '../components/RecentNewsCommentsWidget.vue';
 import { RouterView } from 'vue-router';
 </script>
 
@@ -41,12 +43,18 @@ import { RouterView } from 'vue-router';
 }
 
 /* Мобильные и планшеты: под контентом страницы (новости, пагинация и т.д.) */
-.updates-aside {
-  display: block;
+.sidebar-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   position: static;
   width: 100%;
   max-width: 400px;
   margin: 2rem auto 0;
+}
+
+.sidebar-comments {
+  display: none;
 }
 
 @media (min-width: 768px) {
@@ -63,7 +71,7 @@ import { RouterView } from 'vue-router';
 }
 
 @media (min-width: 1320px) {
-  .updates-aside {
+  .sidebar-aside {
     position: absolute;
     left: calc(100% + 1.25rem);
     top: 0;
@@ -71,6 +79,10 @@ import { RouterView } from 'vue-router';
     max-width: none;
     margin: 0;
     z-index: 5;
+  }
+
+  .sidebar-comments {
+    display: block;
   }
 }
 </style>

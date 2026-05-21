@@ -1,5 +1,5 @@
 <template>
-  <section class="comments" aria-labelledby="comments-heading">
+  <section id="comments" class="comments" aria-labelledby="comments-heading">
     <h2 id="comments-heading" class="comments-heading">
       Комментарии
       <span v-if="comments.length" class="comments-count">{{ comments.length }}</span>
