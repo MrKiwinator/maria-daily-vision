@@ -1,14 +1,14 @@
 <template>
   <div class="app-shell">
     <AppHeader />
-    <main class="container page-layout">
-      <div class="page-main">
+    <div class="page-wrap">
+      <main class="page-main">
         <RouterView />
-      </div>
-      <aside class="page-sidebar" aria-label="Последние изменения">
+      </main>
+      <aside class="updates-aside" aria-label="Последние изменения">
         <LastUpdatesWidget />
       </aside>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -23,33 +23,54 @@ import { RouterView } from 'vue-router';
   min-height: 100vh;
 }
 
-.page-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+/* Область контента — сетка страницы не затрагивает карточку справа */
+.page-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
   min-height: 50vh;
 }
 
 .page-main {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
-.page-sidebar {
-  flex-shrink: 0;
+/* Мобильные и планшеты: под контентом страницы (новости, пагинация и т.д.) */
+.updates-aside {
+  display: block;
+  position: static;
+  width: 100%;
+  max-width: 400px;
+  margin: 2rem auto 0;
 }
 
-@media (min-width: 1100px) {
-  .page-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 1.75rem;
+@media (min-width: 768px) {
+  .page-wrap {
+    max-width: 900px;
+    padding: 0 1.5rem 3rem;
   }
+}
 
-  .page-sidebar {
+@media (min-width: 1024px) {
+  .page-wrap {
+    max-width: 1040px;
+  }
+}
+
+@media (min-width: 1320px) {
+  .updates-aside {
+    position: absolute;
+    left: calc(100% + 1.25rem);
+    top: 0;
     width: 240px;
-    position: sticky;
-    top: 1rem;
+    max-width: none;
+    margin: 0;
+    z-index: 5;
   }
 }
 </style>
