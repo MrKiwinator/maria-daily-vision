@@ -7,7 +7,7 @@ import { upload } from '../middleware/upload.js';
 import { notifyNewNews } from '../services/telegram.js';
 
 const router = Router();
-const PER_PAGE = 10;
+const PER_PAGE = 11;
 
 function buildListQuery(search, date) {
   let sql = 'SELECT id, title, content, image_path, published_at FROM news WHERE 1=1';
