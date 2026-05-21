@@ -37,6 +37,11 @@ const routes = [
       { path: 'plans/new', redirect: { name: 'news' } },
       { path: 'about', name: 'about', component: () => import('../views/AboutView.vue') },
       {
+        path: 'last-updates',
+        name: 'last-updates',
+        component: () => import('../views/LastUpdatesView.vue'),
+      },
+      {
         path: 'users',
         name: 'users',
         component: () => import('../views/UsersView.vue'),

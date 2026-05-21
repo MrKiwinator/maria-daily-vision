@@ -8,19 +8,30 @@ import { notifyNewNews } from '../services/telegram.js';
 
 const router = Router();
 const PER_PAGE = 11;
+const MAX_COMMENT_LENGTH = 2000;
+
+const commentsForNewsSql = `
+  SELECT c.id, c.news_id, c.user_id, u.username, c.body, c.created_at
+  FROM news_comments c
+  JOIN users u ON u.id = c.user_id
+  WHERE c.news_id = ?
+  ORDER BY c.created_at ASC
+`;
 
 function buildListQuery(search, date) {
-  let sql = 'SELECT id, title, content, image_path, published_at FROM news WHERE 1=1';
+  let sql = `SELECT n.id, n.title, n.content, n.image_path, n.published_at,
+    (SELECT COUNT(*) FROM news_comments c WHERE c.news_id = n.id) AS comment_count
+    FROM news n WHERE 1=1`;
   const params = [];
   if (search) {
-    sql += ' AND title LIKE ?';
+    sql += ' AND n.title LIKE ?';
     params.push(`%${search}%`);
   }
   if (date) {
-    sql += " AND date(published_at) = date(?)";
+    sql += " AND date(n.published_at) = date(?)";
     params.push(date);
   }
-  sql += ' ORDER BY published_at DESC';
+  sql += ' ORDER BY n.published_at DESC';
   return { sql, params };
 }
 
@@ -39,8 +50,63 @@ router.get('/', authenticate, (req, res) => {
   res.json({ items, page, totalPages, total, perPage: PER_PAGE });
 });
 
+router.get('/:id/comments', authenticate, (req, res) => {
+  const news = db.prepare('SELECT id FROM news WHERE id = ?').get(req.params.id);
+  if (!news) return res.status(404).json({ error: 'Новость не найдена' });
+  const comments = db.prepare(commentsForNewsSql).all(req.params.id);
+  res.json({ comments });
+});
+
+router.post('/:id/comments', authenticate, (req, res) => {
+  const news = db.prepare('SELECT id FROM news WHERE id = ?').get(req.params.id);
+  if (!news) return res.status(404).json({ error: 'Новость не найдена' });
+
+  const body = (req.body?.body || '').trim();
+  if (!body) return res.status(400).json({ error: 'Введите текст комментария' });
+  if (body.length > MAX_COMMENT_LENGTH) {
+    return res.status(400).json({ error: `Комментарий не длиннее ${MAX_COMMENT_LENGTH} символов` });
+  }
+
+  const result = db
+    .prepare('INSERT INTO news_comments (news_id, user_id, body) VALUES (?, ?, ?)')
+    .run(news.id, req.user.id, body);
+
+  const comment = db
+    .prepare(
+      `SELECT c.id, c.news_id, c.user_id, u.username, c.body, c.created_at
+       FROM news_comments c
+       JOIN users u ON u.id = c.user_id
+       WHERE c.id = ?`
+    )
+    .get(result.lastInsertRowid);
+
+  res.status(201).json({ comment });
+});
+
+router.delete('/:id/comments/:commentId', authenticate, (req, res) => {
+  const comment = db
+    .prepare('SELECT * FROM news_comments WHERE id = ? AND news_id = ?')
+    .get(req.params.commentId, req.params.id);
+  if (!comment) return res.status(404).json({ error: 'Комментарий не найден' });
+
+  const isOwner = comment.user_id === req.user.id;
+  const isAdmin = req.user.role === 'admin';
+  if (!isOwner && !isAdmin) {
+    return res.status(403).json({ error: 'Нельзя удалить чужой комментарий' });
+  }
+
+  db.prepare('DELETE FROM news_comments WHERE id = ?').run(comment.id);
+  res.json({ ok: true });
+});
+
 router.get('/:id', authenticate, (req, res) => {
-  const item = db.prepare('SELECT * FROM news WHERE id = ?').get(req.params.id);
+  const item = db
+    .prepare(
+      `SELECT n.*,
+        (SELECT COUNT(*) FROM news_comments c WHERE c.news_id = n.id) AS comment_count
+       FROM news n WHERE n.id = ?`
+    )
+    .get(req.params.id);
   if (!item) return res.status(404).json({ error: 'Новость не найдена' });
   res.json({ item });
 });

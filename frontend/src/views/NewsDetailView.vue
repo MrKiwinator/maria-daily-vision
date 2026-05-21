@@ -26,6 +26,8 @@
           </div>
           <div class="detail-body">{{ item.content }}</div>
         </article>
+
+        <NewsComments :news-id="item.id" />
       </div>
 
       <section v-if="related.length" class="detail-related" aria-labelledby="related-news-heading">
@@ -51,6 +53,7 @@ import { useAuthStore } from '../stores/auth.js';
 import { api, imageUrl } from '../api/client.js';
 import { formatDate, formatTime } from '../utils/text.js';
 import ArticleCard from '../components/ArticleCard.vue';
+import NewsComments from '../components/NewsComments.vue';
 
 const route = useRoute();
 const router = useRouter();

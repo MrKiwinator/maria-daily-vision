@@ -10,9 +10,12 @@
     <component :is="linkComponent" v-bind="linkBindings" class="article-card-link">
       <article class="article-card" :class="cardClass">
         <h2 class="card-title">{{ item.title }}</h2>
-        <p class="card-date">
-          {{ formatDate(item.published_at) }}
-          <span class="card-time">{{ formatTime(item.published_at) }}</span>
+        <p class="card-meta">
+          <span class="card-date">
+            {{ formatDate(item.published_at) }}
+            <span class="card-time">{{ formatTime(item.published_at) }}</span>
+          </span>
+          <span class="card-comments">{{ commentCountLabel(item.comment_count) }}</span>
         </p>
         <div class="card-image-wrap">
           <img :src="imageUrl(item.image_path)" :alt="item.title" class="card-image" />
@@ -30,7 +33,7 @@ import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '../stores/auth.js';
 import { imageUrl } from '../api/client.js';
-import { truncate, formatDate, formatTime } from '../utils/text.js';
+import { truncate, formatDate, formatTime, commentCountLabel } from '../utils/text.js';
 import { api } from '../api/client.js';
 
 const props = defineProps({
@@ -157,19 +160,40 @@ async function confirmDelete() {
   padding: 0.65rem 0.75rem 0.2rem;
 }
 
-.article-card.is-quad .card-date {
+.article-card.is-quad .card-meta {
   padding: 0 0.75rem 0.5rem;
   font-size: 0.8rem;
+}
+
+.article-card.is-quad .card-comments {
+  font-size: 0.75rem;
 }
 
 .article-card.is-quad .card-image-wrap {
   aspect-ratio: 4 / 3;
 }
 
-.card-date {
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
   padding: 0 1rem 0.75rem;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.card-date {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card-comments {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.8rem;
 }
 
 .card-time {

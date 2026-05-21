@@ -158,3 +158,31 @@ export async function notifyNewNews(item) {
     parse_mode: 'HTML',
   });
 }
+
+function buildLastUpdateMessage(item, siteUrl) {
+  const body = escapeHtml(truncate(item.body, 500));
+  const dateLine = formatPublishedAt(item.created_at);
+  const link = siteUrl ? `${siteUrl}/last-updates` : null;
+
+  let text = '<b>Новое в «Последних изменениях»</b>\n\n';
+  if (body) text += body;
+  if (dateLine) text += `\n\n📅 ${escapeHtml(dateLine)}`;
+  if (link) text += `\n\n<a href="${link}">Открыть на сайте</a>`;
+
+  return text;
+}
+
+/** Уведомление о новой записи в «Последних изменениях» (только при создании). */
+export async function notifyNewLastUpdate(item) {
+  const { botToken, chatId, siteUrl } = getConfig();
+  if (!botToken || !chatId) return;
+  if (process.env.NOTIFY_ON_LAST_UPDATES === 'false') return;
+
+  const text = buildLastUpdateMessage(item, siteUrl);
+
+  await telegramApi(botToken, 'sendMessage', {
+    chat_id: chatId,
+    text: text.slice(0, 4096),
+    parse_mode: 'HTML',
+  });
+}

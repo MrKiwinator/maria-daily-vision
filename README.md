@@ -13,7 +13,7 @@
 | **Пользователь** | Новости, Планы, О Марии, поиск и пагинация |
 | **Администратор** | Всё выше + добавление новостей/планов, управление пользователями, редактирование страницы «О Марии» |
 
-При первом запуске создаётся администратор (логин/пароль — в `.env`, по умолчанию `admin` / `admin123`).
+При первом запуске создаётся администратор (логин/пароль — в `.env`, по умолчанию `MrKiwi` / `admin123`).
 
 ---
 
@@ -37,7 +37,7 @@ copy .env.example .env
 ```env
 PORT=3001
 JWT_SECRET=ваша-длинная-случайная-строка
-ADMIN_USERNAME=admin
+ADMIN_USERNAME=MrKiwi
 ADMIN_PASSWORD=надёжный-пароль
 CORS_ORIGIN=http://localhost:5173
 ```
@@ -124,7 +124,7 @@ nano .env
 ```env
 PORT=3001
 JWT_SECRET=очень-длинный-секрет-минимум-32-символа
-ADMIN_USERNAME=admin
+ADMIN_USERNAME=MrKiwi
 ADMIN_PASSWORD=сложный-пароль
 CORS_ORIGIN=https://ваш-домен.ru
 SERVE_FRONTEND=true
@@ -134,15 +134,17 @@ TELEGRAM_BOT_TOKEN=123456:ABC...
 TELEGRAM_CHAT_ID=-1001234567890
 ```
 
-### Telegram-уведомления о новых новостях
+### Telegram-уведомления
 
 1. Создайте бота через [@BotFather](https://t.me/BotFather), скопируйте токен в `TELEGRAM_BOT_TOKEN`.
 2. Добавьте бота в канал или группу (для канала — права администратора с публикацией сообщений).
 3. Узнайте `chat_id`: для канала обычно вида `-100…` (можно через [@userinfobot](https://t.me/userinfobot) в группе или API `getUpdates` после сообщения в чат).
-4. Укажите `PUBLIC_SITE_URL` — публичный HTTPS-адрес сайта (для ссылки «Читать на сайте» и превью фото).
+4. Укажите `PUBLIC_SITE_URL` — публичный HTTPS-адрес сайта (ссылки в сообщениях; для новостей — превью фото).
 5. Перезапустите API. При старте в логе появится строка `Telegram: уведомления о новых новостях включены`.
 
-Уведомление отправляется только при **создании** новости (не при редактировании). Локально (`localhost`) фото в Telegram не отправляется — только текст; на продакшене с HTTPS уходит сообщение с картинкой.
+**Новости:** уведомление только при **создании** (не при редактировании). Локально (`localhost`) фото в Telegram не отправляется — только текст; на продакшене с HTTPS уходит сообщение с картинкой. Отключить: `NOTIFY_ON_NEWS=false`.
+
+**Последние изменения:** уведомление при **добавлении** новой записи (текст + ссылка на `/last-updates`). Отключить: `NOTIFY_ON_LAST_UPDATES=false`.
 
 **Telegram заблокирован на VPS:** в `backend/.env` укажите прокси, через который сервер выходит в интернет:
 
@@ -237,9 +239,13 @@ pm2 restart mdv-api
 | GET | `/api/auth/me` | Авторизованные |
 | GET/POST/DELETE | `/api/users` | Админ |
 | GET/POST/PUT/DELETE | `/api/news` | GET — все; POST/PUT/DELETE — админ |
+| GET/POST | `/api/news/:id/comments` | Авторизованные пользователи |
+| DELETE | `/api/news/:id/comments/:commentId` | Автор комментария или админ |
 | GET/POST/PUT/DELETE | `/api/plans` | Аналогично |
 | GET/PUT | `/api/about` | GET — все; PUT — админ |
 | GET/PUT | `/api/settings/tagline` | GET — все; PUT — админ |
+| GET | `/api/last-updates?limit=4` | Все авторизованные |
+| POST/PUT/DELETE | `/api/last-updates` | Админ |
 
 Заголовок авторизации: `Authorization: Bearer <token>`
 

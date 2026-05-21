@@ -11,6 +11,7 @@ import newsRoutes from './routes/news.js';
 import plansRoutes from './routes/plans.js';
 import aboutRoutes from './routes/about.js';
 import settingsRoutes from './routes/settings.js';
+import lastUpdatesRoutes from './routes/lastUpdates.js';
 import { uploadsDir } from './middleware/upload.js';
 import { isTelegramConfigured, isTelegramProxyConfigured } from './services/telegram.js';
 
@@ -38,6 +39,7 @@ app.use('/api/news', newsRoutes);
 app.use('/api/plans', plansRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/last-updates', lastUpdatesRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, name: 'Maria Daily Vision API' });

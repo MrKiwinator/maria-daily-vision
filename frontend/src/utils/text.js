@@ -1,3 +1,16 @@
+/** Подпись числа комментариев по правилам русского языка. */
+export function commentCountLabel(count) {
+  const n = Number(count) || 0;
+  if (n === 0) return '0 комментариев';
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${n} комментарий`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    return `${n} комментария`;
+  }
+  return `${n} комментариев`;
+}
+
 export function truncate(text, max = 180) {
   if (!text) return '';
   const clean = text.replace(/\s+/g, ' ').trim();
