@@ -1,3 +1,28 @@
+import { fetch as undiciFetch, ProxyAgent } from 'undici';
+import { SocksProxyAgent } from 'socks-proxy-agent';
+
+let telegramDispatcher;
+
+function getTelegramDispatcher() {
+  const proxyUrl = process.env.TELEGRAM_PROXY_URL?.trim();
+  if (!proxyUrl) return undefined;
+  if (!telegramDispatcher || telegramDispatcher._proxyUrl !== proxyUrl) {
+    const lower = proxyUrl.toLowerCase();
+    telegramDispatcher =
+      lower.startsWith('socks4://') ||
+      lower.startsWith('socks5://') ||
+      lower.startsWith('socks://')
+        ? new SocksProxyAgent(proxyUrl)
+        : new ProxyAgent(proxyUrl);
+    telegramDispatcher._proxyUrl = proxyUrl;
+  }
+  return telegramDispatcher;
+}
+
+export function isTelegramProxyConfigured() {
+  return Boolean(process.env.TELEGRAM_PROXY_URL?.trim());
+}
+
 function getConfig() {
   const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
@@ -66,12 +91,38 @@ function buildNewsMessage(item, siteUrl, mediaBase) {
   return { text, photoUrl };
 }
 
+function formatFetchError(err) {
+  const parts = [err.message];
+  const code = err.cause?.code;
+  if (code) parts.push(`code=${code}`);
+  if (err.cause?.message && err.cause.message !== err.message) {
+    parts.push(err.cause.message);
+  }
+  return parts.join(' | ');
+}
+
+async function telegramFetch(url, init) {
+  const dispatcher = getTelegramDispatcher();
+  return undiciFetch(url, dispatcher ? { ...init, dispatcher } : init);
+}
+
 async function telegramApi(botToken, method, body) {
-  const res = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let res;
+  try {
+    res = await telegramFetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (err) {
+    const proxyHint = isTelegramProxyConfigured()
+      ? ''
+      : '. Если Telegram заблокирован на сервере — задайте TELEGRAM_PROXY_URL';
+    throw new Error(
+      `нет связи с api.telegram.org (${formatFetchError(err)})${proxyHint}`
+    );
+  }
   const data = await res.json();
   if (!data.ok) {
     throw new Error(data.description || `Telegram ${method} failed`);

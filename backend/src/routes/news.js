@@ -62,7 +62,7 @@ router.post('/', authenticate, requireAdmin, upload.single('image'), (req, res) 
     )
     .run(title.trim(), content.trim(), image_path, pubDate);
   const item = db.prepare('SELECT * FROM news WHERE id = ?').get(result.lastInsertRowid);
-  void notifyNewNews(item).catch((err) => console.error('[telegram]', err.message));
+  void notifyNewNews(item).catch((err) => console.error('[telegram]', err.message || err));
   res.status(201).json({ item });
 });
 

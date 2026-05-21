@@ -12,7 +12,7 @@ import plansRoutes from './routes/plans.js';
 import aboutRoutes from './routes/about.js';
 import settingsRoutes from './routes/settings.js';
 import { uploadsDir } from './middleware/upload.js';
-import { isTelegramConfigured } from './services/telegram.js';
+import { isTelegramConfigured, isTelegramProxyConfigured } from './services/telegram.js';
 
 if (!process.env.JWT_SECRET) {
   console.warn('Warning: JWT_SECRET not set. Using default (unsafe for production).');
@@ -68,5 +68,8 @@ app.listen(PORT, () => {
   console.log(`Maria Daily Vision API: http://localhost:${PORT}`);
   if (isTelegramConfigured()) {
     console.log('Telegram: уведомления о новых новостях включены');
+    if (isTelegramProxyConfigured()) {
+      console.log('Telegram: запросы идут через TELEGRAM_PROXY_URL');
+    }
   }
 });
