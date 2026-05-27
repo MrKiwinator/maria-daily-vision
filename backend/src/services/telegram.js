@@ -196,6 +196,69 @@ async function telegramApi(botToken, method, body) {
   return data;
 }
 
+function planStatusLabel(status) {
+  return status === 'visited' ? 'Посещено' : 'Запланировано';
+}
+
+function buildPlanMessage(item, siteUrl, mediaBase) {
+  const title = escapeHtml(item.title);
+  const excerpt = escapeHtml(truncate(item.description, 300));
+  const statusLine = escapeHtml(planStatusLabel(item.status));
+  const dateLine = formatPublishedAt(item.created_at);
+  const plansLink = siteUrl ? `${siteUrl}/plans` : null;
+  const placeLink = item.link_url?.trim() || null;
+
+  let text = '<b>Новый план</b>\n\n';
+  text += `<b>${title}</b>`;
+  if (excerpt) text += `\n\n${excerpt}`;
+  text += `\n\n📌 ${statusLine}`;
+  if (dateLine) text += `\n\n📅 ${escapeHtml(dateLine)}`;
+  if (placeLink && isPublicHttpsUrl(placeLink)) {
+    text += `\n\n<a href="${placeLink}">Ссылка на место / событие</a>`;
+  }
+  if (plansLink) text += `\n\n<a href="${plansLink}">Открыть на карте</a>`;
+
+  const photoUrl =
+    mediaBase && item.image_path
+      ? `${mediaBase}${item.image_path.startsWith('/') ? '' : '/'}${item.image_path}`
+      : null;
+
+  return { text, photoUrl };
+}
+
+/** Уведомление о новом плане (только при создании, не при редактировании). */
+export async function notifyNewPlan(item) {
+  const { botToken, chatId, siteUrl, mediaBase } = getConfig();
+  if (!botToken || !chatId) return;
+  if (process.env.NOTIFY_ON_PLANS === 'false') return;
+
+  const { text, photoUrl } = buildPlanMessage(item, siteUrl, mediaBase);
+
+  if (photoUrl && isPublicHttpsUrl(photoUrl)) {
+    try {
+      await withTelegramRetry('sendPhoto', () =>
+        telegramApi(botToken, 'sendPhoto', {
+          chat_id: chatId,
+          photo: photoUrl,
+          caption: truncateTelegramHtml(text, 1024),
+          parse_mode: 'HTML',
+        })
+      );
+      return;
+    } catch (err) {
+      console.error('[telegram] plan sendPhoto failed, fallback to text:', err.message);
+    }
+  }
+
+  await withTelegramRetry('sendMessage', () =>
+    telegramApi(botToken, 'sendMessage', {
+      chat_id: chatId,
+      text: truncateTelegramHtml(text, 4096),
+      parse_mode: 'HTML',
+    })
+  );
+}
+
 /** Уведомление о новой публикации (только при создании, не при редактировании). */
 export async function notifyNewNews(item) {
   const { botToken, chatId, siteUrl, mediaBase } = getConfig();

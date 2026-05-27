@@ -9,6 +9,7 @@ import {
   getVisitPhotoCount,
   unlinkUpload,
 } from '../utils/planPhotos.js';
+import { notifyNewPlan } from '../services/telegram.js';
 
 const router = Router();
 
@@ -174,6 +175,9 @@ router.post('/', authenticate, requirePlanEditor, upload.single('image'), (req, 
   const item = db
     .prepare(`SELECT ${PLAN_FIELDS} FROM plans WHERE id = ?`)
     .get(result.lastInsertRowid);
+  void notifyNewPlan(item).catch((err) =>
+    console.error(`[telegram] plan id=${item.id}:`, err.message || err)
+  );
   res.status(201).json({ item: { ...item, visit_photo_count: 0 } });
 });
 

@@ -1,11 +1,16 @@
 <template>
   <Teleport to="body">
-    <div class="modal-backdrop" @click.self="$emit('close')">
+    <div
+      class="modal-backdrop"
+      @pointerdown="onBackdropPointerDown"
+      @pointerup="onBackdropPointerUp"
+    >
       <div
         class="modal-panel"
         :class="`modal-panel--${size}`"
         role="dialog"
         :aria-labelledby="titleId"
+        @pointerdown.stop="onPanelPointerDown"
       >
         <header class="modal-header">
           <h3 :id="titleId" class="modal-title">{{ title }}</h3>
@@ -36,9 +41,27 @@ defineProps({
   },
 });
 
-defineEmits(['close']);
+const emit = defineEmits(['close']);
 
 const titleId = `modal-title-${useId()}`;
+
+/** Закрытие только при клике по фону (mousedown и mouseup на backdrop), не при отпускании мыши снаружи после выделения в форме. */
+let pointerDownOnBackdrop = false;
+
+function onBackdropPointerDown(e) {
+  pointerDownOnBackdrop = e.target === e.currentTarget;
+}
+
+function onPanelPointerDown() {
+  pointerDownOnBackdrop = false;
+}
+
+function onBackdropPointerUp(e) {
+  if (pointerDownOnBackdrop && e.target === e.currentTarget) {
+    emit('close');
+  }
+  pointerDownOnBackdrop = false;
+}
 </script>
 
 <style scoped>

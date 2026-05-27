@@ -69,7 +69,7 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`Maria Daily Vision API: http://localhost:${PORT}`);
   if (isTelegramConfigured()) {
-    console.log('Telegram: уведомления о новых новостях включены');
+    console.log('Telegram: уведомления о новых новостях и планах включены');
     if (isTelegramProxyConfigured()) {
       console.log('Telegram: запросы идут через TELEGRAM_PROXY_URL');
     }

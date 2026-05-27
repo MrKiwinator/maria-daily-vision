@@ -134,17 +134,7 @@
             Оставьте пустым, чтобы сохранить текущее фото
           </p>
         </div>
-        <div class="form-row-coords">
-          <div class="form-group">
-            <label>Широта *</label>
-            <input v-model.number="form.latitude" type="number" step="any" required />
-          </div>
-          <div class="form-group">
-            <label>Долгота *</label>
-            <input v-model.number="form.longitude" type="number" step="any" required />
-          </div>
-        </div>
-        <p class="form-hint">Укажите координаты точки на карте (можно скопировать из Яндекс.Карт).</p>
+        <PlanCoordsFields v-model:latitude="form.latitude" v-model:longitude="form.longitude" />
         <div class="form-group">
           <label>Статус</label>
           <select v-model="form.status">
@@ -188,17 +178,7 @@
           </div>
           <input type="file" accept="image/*" @change="onImageChange" />
         </div>
-        <div class="form-row-coords">
-          <div class="form-group">
-            <label>Широта *</label>
-            <input v-model.number="form.latitude" type="number" step="any" required />
-          </div>
-          <div class="form-group">
-            <label>Долгота *</label>
-            <input v-model.number="form.longitude" type="number" step="any" required />
-          </div>
-        </div>
-        <p class="form-hint">Укажите координаты точки на карте (можно скопировать из Яндекс.Карт).</p>
+        <PlanCoordsFields v-model:latitude="form.latitude" v-model:longitude="form.longitude" />
         <div class="form-group">
           <label>Статус</label>
           <select v-model="form.status">
@@ -234,6 +214,7 @@ import { api, imageUrl } from '../api/client.js';
 import PlansMap from '../components/PlansMap.vue';
 import AppModal from '../components/AppModal.vue';
 import PlanVisitGallery from '../components/PlanVisitGallery.vue';
+import PlanCoordsFields from '../components/PlanCoordsFields.vue';
 
 const auth = useAuthStore();
 
@@ -700,17 +681,6 @@ onMounted(load);
 
 .form-hint--inline {
   margin: 0.35rem 0 0;
-}
-
-.form-row-coords {
-  display: grid;
-  gap: 0.75rem;
-}
-
-@media (min-width: 480px) {
-  .form-row-coords {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 .form-hint {
