@@ -153,6 +153,16 @@ onMounted(() => {
 }
 
 @media (max-width: 1023px) {
+  /* На мобильных карточки идут списком: добавляем небольшой разделитель
+     между новостями (вместо "прижатых" карточек друг к другу). */
+  .news-mosaic :deep(.article-card-outer) {
+    margin-bottom: 0.5rem;
+  }
+
+  .news-mosaic :deep(.article-card-outer:last-child) {
+    margin-bottom: 0;
+  }
+
   .news-mosaic :deep(.article-card.is-hero .card-title),
   .news-mosaic :deep(.article-card.is-duo .card-title) {
     font-size: 1.35rem;

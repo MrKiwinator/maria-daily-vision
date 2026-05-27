@@ -184,7 +184,14 @@ async function telegramApi(botToken, method, body) {
     );
   }
   if (!data.ok) {
-    throw new Error(data.description || `Telegram ${method} failed`);
+    const desc = data.description || `Telegram ${method} failed`;
+    const migrateId = data.parameters?.migrate_to_chat_id;
+    if (migrateId != null) {
+      throw new Error(
+        `${desc}. Обновите TELEGRAM_CHAT_ID в backend/.env на: ${migrateId}`
+      );
+    }
+    throw new Error(desc);
   }
   return data;
 }
