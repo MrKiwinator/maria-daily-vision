@@ -32,9 +32,12 @@ const routes = [
         name: 'news-detail',
         component: () => import('../views/NewsDetailView.vue'),
       },
-      /* Раздел «Планы» временно скрыт — вернём маршруты позже */
-      { path: 'plans', redirect: { name: 'news' } },
-      { path: 'plans/new', redirect: { name: 'news' } },
+      {
+        path: 'plans',
+        name: 'plans',
+        component: () => import('../views/PlansView.vue'),
+        meta: { wide: true },
+      },
       { path: 'about', name: 'about', component: () => import('../views/AboutView.vue') },
       {
         path: 'last-updates',
@@ -45,7 +48,7 @@ const routes = [
         path: 'users',
         name: 'users',
         component: () => import('../views/UsersView.vue'),
-        meta: { admin: true },
+        meta: { userManager: true },
       },
     ],
   },
@@ -67,6 +70,9 @@ router.beforeEach(async (to) => {
     return { name: 'news' };
   }
   if (to.meta.admin && !auth.isAdmin) {
+    return { name: 'news' };
+  }
+  if (to.meta.userManager && !auth.canManageUsers) {
     return { name: 'news' };
   }
 });

@@ -20,3 +20,19 @@ export function requireAdmin(req, res, next) {
   }
   next();
 }
+
+export function requirePlanEditor(req, res, next) {
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'superuser') {
+    return res.status(403).json({ error: 'Недостаточно прав для управления планами' });
+  }
+  next();
+}
+
+export function requireUserManager(req, res, next) {
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'superuser') {
+    return res.status(403).json({ error: 'Недостаточно прав для управления пользователями' });
+  }
+  next();
+}

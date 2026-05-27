@@ -25,7 +25,8 @@
         <nav class="main-nav" aria-label="Основное меню">
           <RouterLink to="/about" @click="closeMenu">О Марии</RouterLink>
           <RouterLink to="/news" @click="closeMenu">Новости</RouterLink>
-          <RouterLink v-if="auth.isAdmin" to="/users" @click="closeMenu">
+          <RouterLink to="/plans" @click="closeMenu">Планы</RouterLink>
+          <RouterLink v-if="auth.canManageUsers" to="/users" @click="closeMenu">
             Пользователи
           </RouterLink>
           <button type="button" class="nav-logout" @click="onLogout">Выход</button>

@@ -13,10 +13,11 @@
           <label>Пароль</label>
           <input v-model="newUser.password" type="password" required minlength="4" />
         </div>
-        <div class="form-group">
+        <div v-if="auth.isAdmin" class="form-group">
           <label>Роль</label>
           <select v-model="newUser.role">
             <option value="user">Пользователь</option>
+            <option value="superuser">Суперпользователь</option>
             <option value="admin">Администратор</option>
           </select>
         </div>
@@ -44,13 +45,25 @@
           <tr v-for="u in users" :key="u.id">
             <td>{{ u.id }}</td>
             <td>{{ u.username }}</td>
-            <td>{{ u.role === 'admin' ? 'Админ' : 'Пользователь' }}</td>
+            <td>
+              <select
+                v-if="auth.isAdmin && u.role !== 'admin' && u.id !== auth.user?.id"
+                :value="u.role"
+                class="role-select"
+                :disabled="roleUpdating === u.id"
+                @change="changeRole(u.id, $event.target.value)"
+              >
+                <option value="user">Пользователь</option>
+                <option value="superuser">Суперпользователь</option>
+              </select>
+              <span v-else>{{ roleLabel(u.role) }}</span>
+            </td>
             <td>{{ formatDate(u.created_at) }}</td>
             <td>
               <button
                 type="button"
                 class="btn btn-danger btn-sm"
-                :disabled="u.id === auth.user?.id"
+                :disabled="u.id === auth.user?.id || (auth.isSuperuser && u.role === 'admin')"
                 @click="removeUser(u.id)"
               >
                 Удалить
@@ -75,7 +88,14 @@ const loading = ref(true);
 const listError = ref('');
 const formError = ref('');
 const adding = ref(false);
+const roleUpdating = ref(null);
 const newUser = ref({ username: '', password: '', role: 'user' });
+
+function roleLabel(role) {
+  if (role === 'admin') return 'Администратор';
+  if (role === 'superuser') return 'Суперпользователь';
+  return 'Пользователь';
+}
 
 onMounted(load);
 
@@ -96,13 +116,28 @@ async function addUser() {
   formError.value = '';
   adding.value = true;
   try {
-    await api('/api/users', { method: 'POST', body: newUser.value });
+    const body = { ...newUser.value };
+    if (!auth.isAdmin) body.role = 'user';
+    await api('/api/users', { method: 'POST', body });
     newUser.value = { username: '', password: '', role: 'user' };
     await load();
   } catch (e) {
     formError.value = e.message;
   } finally {
     adding.value = false;
+  }
+}
+
+async function changeRole(id, role) {
+  roleUpdating.value = id;
+  try {
+    await api(`/api/users/${id}/role`, { method: 'PATCH', body: { role } });
+    await load();
+  } catch (e) {
+    alert(e.message);
+    await load();
+  } finally {
+    roleUpdating.value = null;
   }
 }
 
@@ -143,7 +178,7 @@ async function removeUser(id) {
 
 @media (min-width: 640px) {
   .form-row {
-    grid-template-columns: 1fr 1fr 140px auto;
+    grid-template-columns: 1fr 1fr 160px auto;
     align-items: end;
   }
 }
@@ -171,6 +206,14 @@ async function removeUser(id) {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.role-select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-card);
+  font-size: 0.9rem;
 }
 
 .btn-sm {

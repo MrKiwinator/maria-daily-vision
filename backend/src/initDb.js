@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import db from './db.js';
+import { runMigrations } from './migrations.js';
 
 dotenv.config();
 
@@ -9,7 +10,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('admin', 'user')),
+    role TEXT NOT NULL CHECK(role IN ('admin', 'superuser', 'user')),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -25,11 +26,24 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    content TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    link_url TEXT,
+    image_path TEXT,
+    latitude REAL NOT NULL DEFAULT 55.7558,
+    longitude REAL NOT NULL DEFAULT 37.6173,
+    status TEXT NOT NULL DEFAULT 'planned' CHECK(status IN ('planned', 'visited')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS plan_visit_photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id INTEGER NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
     image_path TEXT NOT NULL,
-    published_at TEXT NOT NULL DEFAULT (datetime('now')),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE INDEX IF NOT EXISTS idx_plan_visit_photos_plan_id ON plan_visit_photos(plan_id);
 
   CREATE TABLE IF NOT EXISTS about (
     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -60,6 +74,8 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+runMigrations();
 
 const mrKiwiExists = db.prepare("SELECT id FROM users WHERE username = 'MrKiwi'").get();
 const legacyAdmin = db

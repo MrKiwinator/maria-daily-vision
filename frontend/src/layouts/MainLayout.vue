@@ -1,7 +1,7 @@
 <template>
   <div class="app-shell">
     <AppHeader />
-    <div class="page-wrap">
+    <div class="page-wrap" :class="{ 'page-wrap--wide': isWidePage }">
       <main class="page-main">
         <RouterView />
       </main>
@@ -17,7 +17,11 @@
 import AppHeader from '../components/AppHeader.vue';
 import LastUpdatesWidget from '../components/LastUpdatesWidget.vue';
 import RecentNewsCommentsWidget from '../components/RecentNewsCommentsWidget.vue';
-import { RouterView } from 'vue-router';
+import { computed } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
+
+const route = useRoute();
+const isWidePage = computed(() => !!route.meta.wide);
 </script>
 
 <style scoped>
@@ -70,7 +74,15 @@ import { RouterView } from 'vue-router';
   }
 }
 
+.page-wrap--wide {
+  max-width: min(1400px, calc(100vw - 2rem));
+}
+
 @media (min-width: 1320px) {
+  .page-wrap--wide {
+    max-width: 1400px;
+  }
+
   .sidebar-aside {
     position: absolute;
     left: calc(100% + 1.25rem);
