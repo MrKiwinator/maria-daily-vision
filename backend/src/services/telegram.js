@@ -60,6 +60,58 @@ function truncate(text, max = 300) {
   return `${clean.slice(0, max).trim()}…`;
 }
 
+/** Обрезка HTML для Telegram без «оборванных» тегов (иначе parse_mode: HTML падает). */
+function truncateTelegramHtml(text, maxLen) {
+  if (text.length <= maxLen) return text;
+  let s = text.slice(0, maxLen);
+  const lastOpen = s.lastIndexOf('<');
+  const lastClose = s.lastIndexOf('>');
+  if (lastOpen > lastClose) s = s.slice(0, lastOpen);
+  return s.trimEnd();
+}
+
+const TELEGRAM_RETRY_ATTEMPTS = 4;
+const TELEGRAM_RETRY_BASE_MS = 1500;
+
+function isRetryableTelegramError(err) {
+  const msg = String(err?.message || err).toLowerCase();
+  if (msg.includes('нет связи с api.telegram.org')) return true;
+  if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('aborted')) {
+    return true;
+  }
+  if (msg.includes('too many requests') || msg.includes('retry after')) return true;
+  if (msg.includes('internal server error') || msg.includes('bad gateway')) return true;
+  if (msg.includes('service unavailable') || msg.includes('gateway timeout')) return true;
+  return false;
+}
+
+function parseRetryAfterMs(err) {
+  const match = String(err?.message || '').match(/retry after (\d+)/i);
+  if (!match) return null;
+  return Math.min(Number(match[1]) * 1000, 60_000);
+}
+
+async function withTelegramRetry(label, fn) {
+  let lastErr;
+  for (let attempt = 0; attempt < TELEGRAM_RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const isLast = attempt >= TELEGRAM_RETRY_ATTEMPTS - 1;
+      if (!isRetryableTelegramError(err) || isLast) throw err;
+      const retryAfter = parseRetryAfterMs(err);
+      const delay = retryAfter ?? TELEGRAM_RETRY_BASE_MS * 2 ** attempt;
+      console.warn(
+        `[telegram] ${label}: попытка ${attempt + 1}/${TELEGRAM_RETRY_ATTEMPTS} не удалась, повтор через ${delay}ms:`,
+        err.message
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 function formatPublishedAt(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleString('ru-RU', {
@@ -123,7 +175,14 @@ async function telegramApi(botToken, method, body) {
       `нет связи с api.telegram.org (${formatFetchError(err)})${proxyHint}`
     );
   }
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(
+      `Telegram ${method}: неверный ответ (HTTP ${res.status})`
+    );
+  }
   if (!data.ok) {
     throw new Error(data.description || `Telegram ${method} failed`);
   }
@@ -140,23 +199,27 @@ export async function notifyNewNews(item) {
 
   if (photoUrl && isPublicHttpsUrl(photoUrl)) {
     try {
-      await telegramApi(botToken, 'sendPhoto', {
-        chat_id: chatId,
-        photo: photoUrl,
-        caption: text.slice(0, 1024),
-        parse_mode: 'HTML',
-      });
+      await withTelegramRetry('sendPhoto', () =>
+        telegramApi(botToken, 'sendPhoto', {
+          chat_id: chatId,
+          photo: photoUrl,
+          caption: truncateTelegramHtml(text, 1024),
+          parse_mode: 'HTML',
+        })
+      );
       return;
     } catch (err) {
       console.error('[telegram] sendPhoto failed, fallback to text:', err.message);
     }
   }
 
-  await telegramApi(botToken, 'sendMessage', {
-    chat_id: chatId,
-    text: text.slice(0, 4096),
-    parse_mode: 'HTML',
-  });
+  await withTelegramRetry('sendMessage', () =>
+    telegramApi(botToken, 'sendMessage', {
+      chat_id: chatId,
+      text: truncateTelegramHtml(text, 4096),
+      parse_mode: 'HTML',
+    })
+  );
 }
 
 function buildLastUpdateMessage(item, siteUrl) {
@@ -180,9 +243,11 @@ export async function notifyNewLastUpdate(item) {
 
   const text = buildLastUpdateMessage(item, siteUrl);
 
-  await telegramApi(botToken, 'sendMessage', {
-    chat_id: chatId,
-    text: text.slice(0, 4096),
-    parse_mode: 'HTML',
-  });
+  await withTelegramRetry('sendMessage', () =>
+    telegramApi(botToken, 'sendMessage', {
+      chat_id: chatId,
+      text: truncateTelegramHtml(text, 4096),
+      parse_mode: 'HTML',
+    })
+  );
 }
